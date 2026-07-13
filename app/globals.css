@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+/*
+ * Paylance design system — "state encodes color"
+ * warm cream base · stone = money HELD in escrow · terracotta = RELEASED / CTA
+ * Display: Jost · Body: Inter · Data/hash/countdown: JetBrains Mono
+ * Full rationale: BRAND.md
+ */
+
+@theme {
+  /* Light, warm, earthy — cream base, terracotta accent */
+  --color-ink: #eae7dc; /* cream base */
+  --color-ink-2: #e1ddce; /* deeper cream (gradient bottom) */
+  --color-panel: #f4f2ea; /* raised near-white card */
+  --color-panel-2: #fbfaf4;
+  --color-line: #d8c3a5; /* sand hairline / border */
+  --color-line-soft: #e3ddcd;
+
+  --color-text: #33302b; /* warm near-black */
+  --color-dim: #615e56; /* AA on cream (~5:1) */
+  --color-mute: #666359; /* AA on cream (~5:1) — headroom above the 4.5 threshold */
+
+  --color-cool: #7c7b77; /* held / in-escrow — stone (graphical + labels) */
+  --color-cool-soft: #d8c3a5;
+  /* deepened terracotta so it meets WCAG AA as text on cream and under white
+     button labels (the original #e85a4f failed both). Same family, more depth. */
+  --color-gold: #c9402b; /* released / paid / CTA — terracotta */
+  --color-gold-soft: #eec2b7;
+  --color-pos: #5b9e6f;
+  --color-neg: #c0463c;
+
+  --font-display: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden; /* safety net against incidental horizontal scroll */
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Layered ambient background:
+ *  ::before → base wash + fine technical dot-grid (fixed, static)
+ *  ::after  → slowly drifting warm aurora (animated) + film grain
+ * Kept low-contrast so it adds depth without competing with content.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    /* dot grid */
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--color-text) 6%, transparent) 0.8px,
+      transparent 1px
+    ),
+    /* base wash */
+    linear-gradient(180deg, #eae7dc 0%, #e1ddce 100%);
+  background-size:
+    22px 22px,
+    100% 100%;
+  /* fade the grid out toward the edges so it never feels like a spreadsheet */
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 40%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(120% 100% at 50% 40%, #000 45%, transparent 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 42% at 80% 8%, rgba(232, 90, 79, 0.10), transparent 60%),
+    radial-gradient(42% 46% at 12% 96%, rgba(233, 128, 116, 0.09), transparent 62%),
+    radial-gradient(30% 34% at 60% 70%, rgba(216, 195, 165, 0.14), transparent 60%);
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2.5%, -2%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-2%, 2.5%, 0) scale(1.03);
+  }
+}
+
+/* Utilities */
+.font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+.font-mono { font-family: var(--font-mono); }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* EXTETA-inspired display: thin geometric caps, wide tracking. For hero words
+   and section titles only — never body, forms, tables, or numbers. */
+.display-caps {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 400;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+.hairline { height: 1px; background: linear-gradient(90deg, transparent, var(--color-line), transparent); }
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-soft);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(51, 48, 43, 0.04), 0 8px 24px rgba(51, 48, 43, 0.05);
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;
+  padding: 0.75rem 1.35rem; border-radius: 11px;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  cursor: pointer; white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn-gold { background: var(--color-gold); color: #fdfcf7; }
+.btn-gold:hover { background: #dd4a3f; }
+.btn-ghost { background: transparent; color: var(--color-text); border: 1px solid var(--color-line); }
+.btn-ghost:hover { border-color: var(--color-gold); color: var(--color-gold); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em;
+  padding: 0.28rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-line);
+  color: var(--color-dim);
+}
+
+.pl-input {
+  width: 100%;
+  background: var(--color-panel-2);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.pl-input:focus { border-color: var(--color-gold); }
+.pl-input::placeholder { color: var(--color-mute); }
+select.pl-input { cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  html { scroll-behavior: auto; }
+}
