@@ -56,6 +56,30 @@ export async function hasTrustline(address: string): Promise<boolean> {
   }
 }
 
+/** Human PUSDC balance from Horizon; null means account/trustline not found. */
+export async function getPusdcBalance(address: string): Promise<string | null> {
+  if (IS_MOCK) return "1000.0000000";
+  try {
+    const res = await fetch(`${CONFIG.horizonUrl}/accounts/${address}`);
+    if (!res.ok) return null;
+    const acct = (await res.json()) as {
+      balances?: {
+        asset_code?: string;
+        asset_issuer?: string;
+        balance?: string;
+      }[];
+    };
+    const balance = (acct.balances ?? []).find(
+      (b) =>
+        b.asset_code === CONFIG.assetCode &&
+        b.asset_issuer === CONFIG.assetIssuer,
+    );
+    return balance?.balance ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Ensure the connected account trusts PUSDC, adding the trustline (one wallet
  * signature) if missing. The payer needs it to fund; the seller needs it to

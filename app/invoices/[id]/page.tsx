@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -34,6 +34,7 @@ import {
   approveRelease,
   clientHold,
   fundInvoice,
+  getPusdcBalance,
   hashFile,
   hashText,
   refundUnstartedInvoice,
@@ -450,15 +451,38 @@ function Meta({
 }
 
 function Addr({ a }: { a: string }) {
+  const [balance, setBalance] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let alive = true;
+    getPusdcBalance(a).then((value) => {
+      if (alive) setBalance(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [a]);
+
   return (
-    <a
-      href={EXPLORER.account(a)}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-1 font-mono hover:text-text"
-    >
-      {shortAddr(a)} <ExternalLink size={11} />
-    </a>
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <a
+        href={EXPLORER.account(a)}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1 font-mono hover:text-text"
+      >
+        {shortAddr(a)} <ExternalLink size={11} />
+      </a>
+      <span className="chip font-mono text-[0.68rem]">
+        {balance === undefined
+          ? "PUSDC …"
+          : balance === null
+            ? "no PUSDC"
+            : `${Number(balance).toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })} PUSDC`}
+      </span>
+    </span>
   );
 }
 
