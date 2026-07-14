@@ -50,6 +50,7 @@ lib/
 ## Status
 ✅ Landing + full app flow: dashboard, create invoice, invoice detail (live tick-dial + SSE + role-aware actions), client pay page, reputation, SEP-24 cash-out.
 ✅ Wallet (stellar-wallets-kit/Freighter) + Soroban write layer (`lib/contract.ts`): create / fund / submit-delivery / approve / hold. Reads via live backend proxy; SSE for the auto-release ghost moment.
+✅ Demo PUSDC faucet on the pay page: connected wallets can add the trustline, request capped backend-minted test funds, then fund escrow.
 ✅ Green build; all 6 routes 200.
 
 **Design:** light theme — cream base, terracotta release accent, coral secondary, Jost display (EXTETA-style wide-tracked caps hero), JetBrains Mono numbers. Signature = tick-mark **Release Ring** (`components/ReleaseRing.tsx`), all colours are CSS vars → palette-swap in `app/globals.css` only.

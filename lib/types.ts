@@ -95,3 +95,11 @@ export interface CashoutSession {
   interactiveUrl: string;
   cashoutId: string;
 }
+
+export interface FaucetResult {
+  account: string;
+  amount: string;
+  asset: string;
+  hash: string;
+  status: string;
+}

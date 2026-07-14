@@ -2,6 +2,7 @@ import { IS_MOCK } from "./config";
 import { mockActions, mockRead, mockSaveMeta } from "./mockStore";
 import type {
   CashoutSession,
+  FaucetResult,
   InvoiceDetail,
   InvoiceSummary,
   ReputationProfile,
@@ -72,6 +73,34 @@ export async function saveInvoiceMeta(body: {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`meta → ${res.status}`);
+  return res.json();
+}
+
+export async function requestDemoPusdc(body: {
+  account: string;
+  amount?: string;
+}): Promise<FaucetResult> {
+  if (IS_MOCK) {
+    return {
+      account: body.account,
+      amount: body.amount ?? "10000000000",
+      asset: "mock-pusdc-sac",
+      hash: "mock",
+      status: "PENDING",
+    };
+  }
+  const res = await fetch("/api/faucet/pusdc", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.json().catch(() => null)) as {
+      message?: string;
+      error?: string;
+    } | null;
+    throw new Error(detail?.message ?? detail?.error ?? `faucet → ${res.status}`);
+  }
   return res.json();
 }
 

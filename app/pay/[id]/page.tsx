@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, Check } from "lucide-react";
+import { ShieldCheck, Check, Coins } from "lucide-react";
 import { AppNav } from "@/components/AppNav";
 import { Money, Spinner, StatusBadge } from "@/components/ui";
 import { useWallet } from "@/lib/wallet";
 import { useToast } from "@/components/Toast";
+import { requestDemoPusdc } from "@/lib/api";
 import { useLiveInvoice } from "@/lib/hooks";
 import { ensureTrustline, fundInvoice } from "@/lib/contract";
 import { reviewWindowLabel, shortAddr } from "@/lib/format";
@@ -20,7 +21,32 @@ export default function PayPage() {
   const toast = useToast();
   const { invoice, loading, refetch } = useLiveInvoice(id);
   const [busy, setBusy] = useState(false);
+  const [faucetBusy, setFaucetBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [faucetError, setFaucetError] = useState<string | null>(null);
+
+  async function requestFunds() {
+    if (!address) return connect();
+    setFaucetError(null);
+    setFaucetBusy(true);
+    try {
+      if (await ensureTrustline(address)) {
+        toast.success("PUSDC trustline added");
+      }
+      const res = await requestDemoPusdc({ account: address });
+      toast.success("Demo PUSDC requested", {
+        detail: "Refresh your wallet balance after the testnet mint confirms.",
+        txHash: res.hash,
+      });
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Could not request demo PUSDC.";
+      setFaucetError(msg);
+      toast.error("Faucet request failed", { detail: msg });
+    } finally {
+      setFaucetBusy(false);
+    }
+  }
 
   async function fund() {
     if (!address) return connect();
@@ -111,9 +137,50 @@ export default function PayPage() {
 
             {invoice.status === "Unfunded" ? (
               <>
+                <div className="mt-6 rounded-xl border border-line-soft p-4">
+                  <div className="flex items-start gap-3">
+                    <Coins
+                      size={18}
+                      style={{
+                        color: "var(--color-gold)",
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    />
+                    <div>
+                      <p className="text-sm font-medium">Need test PUSDC?</p>
+                      <p className="mt-1 text-xs text-dim">
+                        Add the PUSDC trustline, then mint capped demo funds from
+                        the backend faucet. No issuer secret is exposed in the
+                        browser.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={requestFunds}
+                    disabled={busy || faucetBusy}
+                    className="btn btn-ghost mt-4 w-full disabled:opacity-50"
+                  >
+                    <Coins size={16} />
+                    {faucetBusy
+                      ? "Requesting demo PUSDC…"
+                      : address
+                        ? "Get demo PUSDC"
+                        : "Connect wallet for demo PUSDC"}
+                  </button>
+                  {faucetError && (
+                    <p
+                      className="mt-3 text-center text-sm"
+                      style={{ color: "var(--color-neg)" }}
+                    >
+                      {faucetError}
+                    </p>
+                  )}
+                </div>
+
                 <button
                   onClick={fund}
-                  disabled={busy}
+                  disabled={busy || faucetBusy}
                   className="btn btn-gold mt-6 w-full disabled:opacity-50"
                 >
                   {busy
