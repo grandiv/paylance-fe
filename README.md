@@ -2,6 +2,8 @@
 
 Verifiable delivery escrow for cross-border freelancers, on Stellar. Next.js 15 app wired to the live Soroban testnet backend.
 
+Test marker: faucet flow wired and pushed.
+
 **Design mindset:** see `DESIGN_GUIDELINE.md`. **Backend contract:** see `../paylance/FRONTEND_HANDOFF.md`.
 
 ## Stack
