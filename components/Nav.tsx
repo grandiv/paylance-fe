@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
@@ -27,6 +28,14 @@ export function Nav() {
           </a>
           <a href="#stack" className="text-sm text-dim transition-colors hover:text-text">
             Under the hood
+          </a>
+          <a
+            href="https://paylance-1.gitbook.io/paylance-docs"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-sm text-dim transition-colors hover:text-text"
+          >
+            Docs <ExternalLink size={12} />
           </a>
         </div>
         <Link href="/dashboard" className="btn btn-gold text-sm">
