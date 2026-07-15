@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Wallet, LogOut } from "lucide-react";
 import { Wordmark } from "./Nav";
 import { DemoBar } from "./DemoBar";
@@ -28,11 +28,18 @@ function formatCashoutFiat(balance: CashoutFiatBalance | null) {
   return formatFiat(balance.amountRaw, balance.currency);
 }
 
+function fiatDetail(balance: CashoutFiatBalance | null) {
+  if (!balance) return "Complete a cashout to set a fiat balance.";
+  return `Latest cashout invoice #${balance.invoiceId} to ${balance.currency}`;
+}
+
 export function WalletButton() {
   const { address, connect, disconnect } = useWallet();
   const [pusdcBalance, setPusdcBalance] = useState<string | null>(null);
   const [fiatBalance, setFiatBalance] = useState<CashoutFiatBalance | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!address) return;
@@ -60,6 +67,18 @@ export function WalletButton() {
     };
   }, [address]);
 
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!detailsRef.current?.contains(event.target as Node)) {
+        setDetailsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [detailsOpen]);
+
   if (!address) {
     return (
       <button onClick={() => connect()} className="btn btn-gold text-sm">
@@ -69,25 +88,60 @@ export function WalletButton() {
   }
   return (
     <div className="flex items-center gap-2">
-      <a
-        href={EXPLORER.account(address)}
-        target="_blank"
-        rel="noreferrer"
-        className="chip transition-colors hover:border-gold hover:text-text"
-        title={`Open ${address} on Stellar Expert`}
+      <div
+        ref={detailsRef}
+        className="relative"
+        onMouseEnter={() => setDetailsOpen(true)}
+        onMouseLeave={() => setDetailsOpen(false)}
       >
-        <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ background: "var(--color-pos)" }}
-        />
-        <span className="flex flex-col leading-tight">
-          <span>{shortAddr(address)}</span>
-          <span className="text-[0.62rem] tracking-normal text-mute">
-            {balanceLoading ? "PUSDC ..." : formatPusdc(pusdcBalance)} /{" "}
-            {formatCashoutFiat(fiatBalance)}
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((open) => !open)}
+          className="chip text-left transition-colors hover:border-gold hover:text-text"
+          title="Show wallet balances"
+        >
+          <span
+            className="inline-block h-2 w-2 rounded-full"
+            style={{ background: "var(--color-pos)" }}
+          />
+          <span className="flex flex-col leading-tight">
+            <span>{shortAddr(address)}</span>
+            <span className="text-[0.62rem] tracking-normal text-mute">
+              {balanceLoading ? "PUSDC ..." : formatPusdc(pusdcBalance)} /{" "}
+              {formatCashoutFiat(fiatBalance)}
+            </span>
           </span>
-        </span>
-      </a>
+        </button>
+
+        {detailsOpen && (
+          <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-line bg-panel p-4 text-left shadow-xl">
+            <p className="eyebrow mb-3">Wallet balance</p>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-line-soft p-3">
+                <p className="text-xs text-mute">Token balance</p>
+                <p className="mt-1 font-mono text-sm text-text">
+                  {balanceLoading ? "Loading PUSDC..." : formatPusdc(pusdcBalance)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-line-soft p-3">
+                <p className="text-xs text-mute">Fiat cashout balance</p>
+                <p className="mt-1 font-mono text-sm text-text">
+                  {formatCashoutFiat(fiatBalance)}
+                </p>
+                <p className="mt-1 text-xs text-mute">{fiatDetail(fiatBalance)}</p>
+              </div>
+            </div>
+            <a
+              href={EXPLORER.account(address)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1 text-xs text-dim transition-colors hover:text-text"
+            >
+              View account on Stellar Expert <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
+      </div>
       <button
         onClick={() => disconnect()}
         title="Disconnect"

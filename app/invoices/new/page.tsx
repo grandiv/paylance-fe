@@ -17,6 +17,10 @@ const WINDOWS = [
   { label: "72 hours", secs: 259200 },
 ];
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 export default function NewInvoice() {
   const router = useRouter();
   const { address, connect } = useWallet();
@@ -31,10 +35,16 @@ export default function NewInvoice() {
   const [error, setError] = useState<string | null>(null);
 
   const amountNum = Number(amount);
-  const valid = title.trim() && amountNum > 0;
+  const email = clientEmail.trim();
+  const emailError = email && !isValidEmail(email) ? "Enter a valid client email or leave it blank." : null;
+  const valid = title.trim() && amountNum > 0 && !emailError;
 
   async function submit() {
     if (!address) return connect();
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
     setError(null);
     try {
       setBusy("Checking your wallet…");
@@ -49,7 +59,7 @@ export default function NewInvoice() {
       const { metadataHash } = await saveInvoiceMeta({
         title: title.trim(),
         description: description.trim() || undefined,
-        clientEmail: clientEmail.trim() || null,
+        clientEmail: email || null,
         currencyDisplay: CONFIG.assetSymbol,
       });
       setBusy("Confirm in your wallet…");
@@ -109,6 +119,11 @@ export default function NewInvoice() {
               onChange={(e) => setClientEmail(e.target.value)}
               placeholder="client@example.com"
             />
+            {emailError && (
+              <p className="mt-2 text-xs" style={{ color: "var(--color-neg)" }}>
+                {emailError}
+              </p>
+            )}
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label={`Amount (${CONFIG.assetSymbol})`}>
