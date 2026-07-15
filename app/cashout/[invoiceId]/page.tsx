@@ -9,31 +9,14 @@ import { Money, Spinner } from "@/components/ui";
 import { useWallet } from "@/lib/wallet";
 import { useLiveInvoice } from "@/lib/hooks";
 import { getCashout, startCashout } from "@/lib/api";
-import { netAfterFee, toNumber } from "@/lib/format";
-
-const FIAT_OPTIONS = [
-  { code: "IDR", label: "Indonesian rupiah", market: "Indonesia", rate: 16250 },
-  { code: "PHP", label: "Philippine peso", market: "Philippines", rate: 58 },
-  { code: "SGD", label: "Singapore dollar", market: "Singapore", rate: 1.35 },
-  { code: "MYR", label: "Malaysian ringgit", market: "Malaysia", rate: 4.72 },
-  { code: "THB", label: "Thai baht", market: "Thailand", rate: 36.5 },
-  { code: "VND", label: "Vietnamese dong", market: "Vietnam", rate: 25400 },
-  { code: "USD", label: "US dollar", market: "USD rails", rate: 1 },
-] as const;
-
-type FiatCode = (typeof FIAT_OPTIONS)[number]["code"];
-
-function fiatOption(code: string) {
-  return FIAT_OPTIONS.find((option) => option.code === code) ?? FIAT_OPTIONS[0];
-}
-
-function formatFiat(raw: string, code: string): string {
-  const option = fiatOption(code);
-  const value = toNumber(raw) * option.rate;
-  return `${value.toLocaleString(undefined, {
-    maximumFractionDigits: ["IDR", "VND"].includes(option.code) ? 0 : 2,
-  })} ${option.code}`;
-}
+import { netAfterFee } from "@/lib/format";
+import {
+  FIAT_OPTIONS,
+  type FiatCode,
+  fiatOption,
+  formatFiat,
+  saveCashoutFiatBalance,
+} from "@/lib/fiat";
 
 export default function CashoutPage() {
   const params = useParams<{ invoiceId: string }>();
@@ -72,6 +55,13 @@ export default function CashoutPage() {
         const { status: s } = await getCashout(cashoutId);
         setStatus(s);
         if (s === "completed") {
+          saveCashoutFiatBalance({
+            address,
+            amountRaw: net,
+            currency,
+            invoiceId: id,
+            completedAt: Date.now(),
+          });
           setDone(true);
           break;
         }
@@ -138,9 +128,8 @@ export default function CashoutPage() {
                     {fiatBalance}
                   </p>
                   <p className="mt-2 text-xs text-dim">
-                    Demo settlement estimate for {selectedFiat.label}. The
-                    testnet anchor marks this as completed; production rates and
-                    payout rails would come from the selected anchor.
+                    Completed cashout to {selectedFiat.label}. This balance is
+                    now shown from your latest cashout in the wallet chip.
                   </p>
                 </div>
                 <Link href="/dashboard" className="btn btn-ghost mt-5">
