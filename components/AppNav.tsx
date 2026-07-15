@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Wallet, LogOut } from "lucide-react";
+import { ExternalLink, Wallet, LogOut } from "lucide-react";
 import { Wordmark } from "./Nav";
 import { DemoBar } from "./DemoBar";
 import { useWallet } from "@/lib/wallet";
@@ -56,6 +56,14 @@ export function AppNav() {
             >
               New invoice
             </Link>
+            <a
+              href="https://paylance-1.gitbook.io/paylance-docs"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-dim transition-colors hover:text-text"
+            >
+              Docs <ExternalLink size={12} />
+            </a>
           </div>
         </div>
         <WalletButton />

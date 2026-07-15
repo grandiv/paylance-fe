@@ -9,9 +9,31 @@ import { Money, Spinner } from "@/components/ui";
 import { useWallet } from "@/lib/wallet";
 import { useLiveInvoice } from "@/lib/hooks";
 import { getCashout, startCashout } from "@/lib/api";
-import { netAfterFee } from "@/lib/format";
+import { netAfterFee, toNumber } from "@/lib/format";
 
-const CURRENCIES = ["IDR", "PHP", "USD"];
+const FIAT_OPTIONS = [
+  { code: "IDR", label: "Indonesian rupiah", market: "Indonesia", rate: 16250 },
+  { code: "PHP", label: "Philippine peso", market: "Philippines", rate: 58 },
+  { code: "SGD", label: "Singapore dollar", market: "Singapore", rate: 1.35 },
+  { code: "MYR", label: "Malaysian ringgit", market: "Malaysia", rate: 4.72 },
+  { code: "THB", label: "Thai baht", market: "Thailand", rate: 36.5 },
+  { code: "VND", label: "Vietnamese dong", market: "Vietnam", rate: 25400 },
+  { code: "USD", label: "US dollar", market: "USD rails", rate: 1 },
+] as const;
+
+type FiatCode = (typeof FIAT_OPTIONS)[number]["code"];
+
+function fiatOption(code: string) {
+  return FIAT_OPTIONS.find((option) => option.code === code) ?? FIAT_OPTIONS[0];
+}
+
+function formatFiat(raw: string, code: string): string {
+  const option = fiatOption(code);
+  const value = toNumber(raw) * option.rate;
+  return `${value.toLocaleString(undefined, {
+    maximumFractionDigits: ["IDR", "VND"].includes(option.code) ? 0 : 2,
+  })} ${option.code}`;
+}
 
 export default function CashoutPage() {
   const params = useParams<{ invoiceId: string }>();
@@ -19,13 +41,15 @@ export default function CashoutPage() {
   const { address } = useWallet();
   const { invoice, loading } = useLiveInvoice(id);
 
-  const [currency, setCurrency] = useState("IDR");
+  const [currency, setCurrency] = useState<FiatCode>("IDR");
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   const net = invoice ? netAfterFee(invoice.amount, invoice.feeBps) : "0";
+  const selectedFiat = fiatOption(currency);
+  const fiatBalance = formatFiat(net, currency);
 
   async function cashout() {
     if (!invoice || !address) return;
@@ -106,8 +130,19 @@ export default function CashoutPage() {
                   Settlement complete
                 </p>
                 <p className="mt-1 text-sm text-dim">
-                  Funds are on their way to your {currency} account.
+                  Funds are on their way to your {selectedFiat.market} account.
                 </p>
+                <div className="mt-5 rounded-2xl border border-line-soft p-5 text-left">
+                  <p className="eyebrow mb-2">Fiat APAC balance</p>
+                  <p className="font-display text-2xl" style={{ fontWeight: 500 }}>
+                    {fiatBalance}
+                  </p>
+                  <p className="mt-2 text-xs text-dim">
+                    Demo settlement estimate for {selectedFiat.label}. The
+                    testnet anchor marks this as completed; production rates and
+                    payout rails would come from the selected anchor.
+                  </p>
+                </div>
                 <Link href="/dashboard" className="btn btn-ghost mt-5">
                   Back to dashboard
                 </Link>
@@ -119,15 +154,26 @@ export default function CashoutPage() {
                   <select
                     className="pl-input"
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                    onChange={(e) => setCurrency(e.target.value as FiatCode)}
                   >
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {FIAT_OPTIONS.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.code} - {option.label}
                       </option>
                     ))}
                   </select>
                 </label>
+
+                <div className="mt-4 rounded-xl border border-line-soft p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-dim">Estimated receipt</span>
+                    <span className="font-mono text-sm">{fiatBalance}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-mute">
+                    Fiat APAC demo balance for {selectedFiat.market}. Rates are
+                    static demo estimates.
+                  </p>
+                </div>
 
                 <button
                   onClick={cashout}
